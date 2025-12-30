@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npx create-next-app:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial SimpleSign MVP setup\n\n- Next.js 16 with TypeScript and Tailwind CSS\n- Supabase auth integration \\(login, signup, OAuth\\)\n- Landing page with waitlist form\n- Dashboard with document management placeholder\n- Database schema for users, documents, signers, signatures\n- Dark mode trendy UI design\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd document upload and signature field placement\n\nFeatures:\n- PDF upload with drag-drop \\(max 10MB\\)\n- PDF viewer with zoom and page navigation\n- Signature field placement \\(signature, initial, date\\)\n- Signer management \\(add/remove recipients\\)\n- Document send API endpoint\n- Document detail page with activity log\n\nComponents:\n- PDFDropzone: Drag-drop upload with Swedish UI\n- PDFViewer: pdf.js based viewer with toolbar\n- SignatureFieldOverlay: Draggable field placement\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(vercel --yes)",
+      "Bash(vercel --prod)",
+      "Bash(git init:*)",
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Bash(vercel inspect:*)"
+    ]
+  }
+}
