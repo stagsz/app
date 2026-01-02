@@ -44,6 +44,49 @@ export async function POST(
       return NextResponse.json({ error: 'At least one signature field required' }, { status: 400 })
     }
 
+    // Validate signature field positions
+    const validFieldTypes = ['signature', 'initial', 'date', 'text', 'checkbox']
+    const maxPageSize = 2000 // Maximum reasonable PDF page dimension
+
+    for (const field of fields) {
+      // Validate field type
+      if (!validFieldTypes.includes(field.type)) {
+        return NextResponse.json(
+          { error: `Ogiltigt fälttyp: ${field.type}` },
+          { status: 400 }
+        )
+      }
+
+      // Validate page number
+      if (!Number.isInteger(field.page) || field.page < 1) {
+        return NextResponse.json(
+          { error: 'Ogiltigt sidnummer' },
+          { status: 400 }
+        )
+      }
+
+      // Validate position and dimensions
+      if (
+        typeof field.x !== 'number' || field.x < 0 || field.x > maxPageSize ||
+        typeof field.y !== 'number' || field.y < 0 || field.y > maxPageSize ||
+        typeof field.width !== 'number' || field.width <= 0 || field.width > maxPageSize ||
+        typeof field.height !== 'number' || field.height <= 0 || field.height > maxPageSize
+      ) {
+        return NextResponse.json(
+          { error: 'Ogiltiga fältdimensioner' },
+          { status: 400 }
+        )
+      }
+
+      // Validate signer ID exists
+      if (!field.signerId || typeof field.signerId !== 'string') {
+        return NextResponse.json(
+          { error: 'Signerarens ID saknas för fält' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Create signers in database
     const signerRecords = signers.map((signer: { email: string; name: string; id: string }) => ({
       document_id: id,

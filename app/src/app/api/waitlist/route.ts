@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { rateLimiters, rateLimitResponse } from '@/lib/rate-limit'
 
 const waitlistSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
 })
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 5 requests per minute per IP
+  const { success, resetAt } = rateLimiters.waitlist(request)
+  if (!success) {
+    return rateLimitResponse(resetAt)
+  }
+
   try {
     const body = await request.json()
     const { email } = waitlistSchema.parse(body)

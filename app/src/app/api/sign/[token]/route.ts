@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimiters, rateLimitResponse } from '@/lib/rate-limit'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  // Rate limiting: 30 requests per minute per IP
+  const { success, resetAt } = rateLimiters.signToken(request)
+  if (!success) {
+    return rateLimitResponse(resetAt)
+  }
+
   try {
     const { token } = await params
     const supabase = await createClient()

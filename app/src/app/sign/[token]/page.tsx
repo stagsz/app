@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { FileSignature, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { PDFViewer } from '@/components/PDFViewer'
 import { SignatureCapture } from '@/components/SignatureCapture'
+import { PDFErrorBoundary } from '@/components/ErrorBoundary'
 
 interface SignerData {
   id: string
@@ -287,6 +288,7 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
         {/* PDF Viewer */}
         <div className="flex-1 overflow-hidden p-4">
           {signer && (
+            <PDFErrorBoundary>
             <PDFViewer
               url={`/api/sign/${token}/file`}
               onPageChange={(page) => setCurrentPage(page)}
@@ -336,6 +338,7 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
                 </div>
               )}
             />
+            </PDFErrorBoundary>
           )}
         </div>
       </div>

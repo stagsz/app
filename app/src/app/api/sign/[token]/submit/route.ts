@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { mergeSignaturesIntoPdf, generateCompletionCertificate, combinePdfs } from '@/lib/pdf'
 import { sendCompletionNotification } from '@/lib/email'
 import { z } from 'zod'
+import { rateLimiters, rateLimitResponse } from '@/lib/rate-limit'
 
 // Schema for validating field values
 const FieldValuesSchema = z.record(
@@ -14,6 +15,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  // Rate limiting: 10 requests per minute per IP
+  const { success, resetAt } = rateLimiters.signSubmit(request)
+  if (!success) {
+    return rateLimitResponse(resetAt)
+  }
+
   try {
     const { token } = await params
     const supabase = await createClient()

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { FileSignature, ArrowLeft, Send, Pen, Type, Calendar, Plus, Trash2, Loader2 } from 'lucide-react'
 import { PDFViewer } from '@/components/PDFViewer'
 import { SignatureFieldOverlay, SignatureField, FieldType } from '@/components/SignatureFieldOverlay'
+import { PDFErrorBoundary } from '@/components/ErrorBoundary'
 import { createClient } from '@/lib/supabase/client'
 
 interface Signer {
@@ -355,24 +356,26 @@ export default function DocumentEditPage({ params }: { params: Promise<{ id: str
         {/* PDF Viewer */}
         <div className="flex-1 overflow-hidden p-4">
           {document && (
-            <PDFViewer
-              url={`/api/documents/${id}/file`}
-              onPageChange={(page) => setCurrentPage(page)}
-              onDocumentLoad={() => {}}
-              renderOverlay={(page, s) => (
-                <SignatureFieldOverlay
-                  fields={fields}
-                  currentPage={page}
-                  scale={s}
-                  onFieldAdd={handleFieldAdd}
-                  onFieldUpdate={handleFieldUpdate}
-                  onFieldDelete={handleFieldDelete}
-                  activeFieldType={activeFieldType}
-                  containerWidth={pageSize.width * s}
-                  containerHeight={pageSize.height * s}
-                />
-              )}
-            />
+            <PDFErrorBoundary>
+              <PDFViewer
+                url={`/api/documents/${id}/file`}
+                onPageChange={(page) => setCurrentPage(page)}
+                onDocumentLoad={() => {}}
+                renderOverlay={(page, s) => (
+                  <SignatureFieldOverlay
+                    fields={fields}
+                    currentPage={page}
+                    scale={s}
+                    onFieldAdd={handleFieldAdd}
+                    onFieldUpdate={handleFieldUpdate}
+                    onFieldDelete={handleFieldDelete}
+                    activeFieldType={activeFieldType}
+                    containerWidth={pageSize.width * s}
+                    containerHeight={pageSize.height * s}
+                  />
+                )}
+              />
+            </PDFErrorBoundary>
           )}
         </div>
       </div>
