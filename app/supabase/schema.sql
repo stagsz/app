@@ -5,11 +5,7 @@
 create extension if not exists "uuid-ossp";
 
 -- Users table (extends Supabase auth.users)
--- TODO: Stripe integration not yet implemented. When implementing:
--- 1. Create webhook endpoint for Stripe events
--- 2. Implement checkout flow for plan upgrades
--- 3. Handle subscription lifecycle (create, update, cancel)
--- 4. Sync plan and limits from Stripe subscription status
+-- Klarna integration for monthly subscription billing
 create table public.users (
   id uuid references auth.users on delete cascade primary key,
   email text not null unique,
@@ -17,8 +13,10 @@ create table public.users (
   plan text not null default 'free' check (plan in ('free', 'starter', 'pro', 'business')),
   documents_used integer not null default 0,
   documents_limit integer not null default 3,
-  stripe_customer_id text,
-  stripe_subscription_id text,
+  klarna_customer_token text,
+  klarna_subscription_id text,
+  subscription_status text check (subscription_status in ('active', 'cancelled', 'paused', null)),
+  subscription_expires_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -77,6 +75,21 @@ create table public.audit_logs (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Klarna orders table (track payments and subscriptions)
+create table public.klarna_orders (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.users on delete cascade not null,
+  klarna_order_id text not null unique,
+  plan text not null check (plan in ('starter', 'pro', 'business')),
+  amount integer not null,
+  status text not null check (status in ('pending', 'authorized', 'captured', 'cancelled', 'failed')),
+  subscription_id text,
+  order_type text not null default 'subscription' check (order_type in ('subscription', 'upgrade')),
+  metadata jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Waitlist table (for pre-launch)
 create table public.waitlist (
   id uuid default uuid_generate_v4() primary key,
@@ -91,6 +104,8 @@ create index signers_document_id_idx on public.signers(document_id);
 create index signers_access_token_idx on public.signers(access_token);
 create index signature_fields_document_id_idx on public.signature_fields(document_id);
 create index audit_logs_document_id_idx on public.audit_logs(document_id);
+create index klarna_orders_user_id_idx on public.klarna_orders(user_id);
+create index klarna_orders_status_idx on public.klarna_orders(status);
 
 -- Row Level Security (RLS)
 alter table public.users enable row level security;
@@ -172,6 +187,18 @@ create policy "Anyone can insert audit logs" on public.audit_logs
 -- Waitlist is public for inserts
 create policy "Anyone can join waitlist" on public.waitlist
   for insert with check (true);
+
+-- Klarna orders policies
+alter table public.klarna_orders enable row level security;
+
+create policy "Users can view own orders" on public.klarna_orders
+  for select using (auth.uid() = user_id);
+
+create policy "System can insert orders" on public.klarna_orders
+  for insert with check (true);
+
+create policy "System can update orders" on public.klarna_orders
+  for update using (true);
 
 -- Function to handle new user signup
 create or replace function public.handle_new_user()

@@ -17,6 +17,10 @@ export type Database = {
           plan: 'free' | 'starter' | 'pro' | 'business'
           documents_used: number
           documents_limit: number
+          klarna_customer_token: string | null
+          klarna_subscription_id: string | null
+          subscription_status: 'active' | 'cancelled' | 'paused' | null
+          subscription_expires_at: string | null
           created_at: string
           updated_at: string
         }
@@ -27,6 +31,10 @@ export type Database = {
           plan?: 'free' | 'starter' | 'pro' | 'business'
           documents_used?: number
           documents_limit?: number
+          klarna_customer_token?: string | null
+          klarna_subscription_id?: string | null
+          subscription_status?: 'active' | 'cancelled' | 'paused' | null
+          subscription_expires_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -37,6 +45,10 @@ export type Database = {
           plan?: 'free' | 'starter' | 'pro' | 'business'
           documents_used?: number
           documents_limit?: number
+          klarna_customer_token?: string | null
+          klarna_subscription_id?: string | null
+          subscription_status?: 'active' | 'cancelled' | 'paused' | null
+          subscription_expires_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -184,6 +196,47 @@ export type Database = {
           created_at?: string
         }
       }
+      klarna_orders: {
+        Row: {
+          id: string
+          user_id: string
+          klarna_order_id: string
+          plan: 'starter' | 'pro' | 'business'
+          amount: number
+          status: 'pending' | 'authorized' | 'captured' | 'cancelled' | 'failed'
+          subscription_id: string | null
+          order_type: 'subscription' | 'upgrade'
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          klarna_order_id: string
+          plan: 'starter' | 'pro' | 'business'
+          amount: number
+          status: 'pending' | 'authorized' | 'captured' | 'cancelled' | 'failed'
+          subscription_id?: string | null
+          order_type?: 'subscription' | 'upgrade'
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          klarna_order_id?: string
+          plan?: 'starter' | 'pro' | 'business'
+          amount?: number
+          status?: 'pending' | 'authorized' | 'captured' | 'cancelled' | 'failed'
+          subscription_id?: string | null
+          order_type?: 'subscription' | 'upgrade'
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       waitlist: {
         Row: {
           id: string
@@ -219,4 +272,5 @@ export type Document = Tables<'documents'>
 export type Signer = Tables<'signers'>
 export type SignatureField = Tables<'signature_fields'>
 export type AuditLog = Tables<'audit_logs'>
+export type KlarnaOrder = Tables<'klarna_orders'>
 export type WaitlistEntry = Tables<'waitlist'>
