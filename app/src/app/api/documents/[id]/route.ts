@@ -17,7 +17,7 @@ export async function DELETE(
     // Verify document ownership and get current status
     const { data: document, error: fetchError } = await supabase
       .from('documents')
-      .select('id, user_id, status, deleted_at')
+      .select('id, user_id, status')
       .eq('id', id)
       .single()
 
@@ -29,14 +29,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    if (document.deleted_at) {
-      return NextResponse.json({ error: 'Dokumentet är redan raderat' }, { status: 400 })
-    }
-
-    // Soft delete the document
+    // Delete the document (hard delete - this will cascade to signers and signature_fields)
     const { error: deleteError } = await supabase
       .from('documents')
-      .update({ deleted_at: new Date().toISOString() })
+      .delete()
       .eq('id', id)
 
     if (deleteError) {
@@ -80,7 +76,6 @@ export async function GET(
       `)
       .eq('id', id)
       .eq('user_id', user.id)
-      .is('deleted_at', null)
       .single()
 
     if (error || !document) {
