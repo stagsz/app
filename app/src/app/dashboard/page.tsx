@@ -28,7 +28,13 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  // Get user's documents
+  // Get user's info and documents
+  const { data: userData } = await supabase
+    .from('users')
+    .select('plan, subscription_status, documents_used, documents_limit')
+    .eq('id', user.id)
+    .single()
+
   const { data: documents, error: docsError } = await supabase
     .from('documents')
     .select('*')
@@ -38,10 +44,15 @@ export default async function DashboardPage() {
 
   if (docsError) {
     console.error('Failed to fetch documents:', docsError)
+    console.error('User ID:', user.id)
   }
 
   // Filter out soft-deleted documents (if column exists)
   const activeDocuments = documents?.filter(d => !d.deleted_at) ?? []
+
+  if (documents && documents.length > 0) {
+    console.log('Documents fetched:', documents.length, 'Active:', activeDocuments.length)
+  }
 
   const stats = {
     total: activeDocuments.length,
@@ -62,6 +73,29 @@ export default async function DashboardPage() {
             SimpleSign
           </Link>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {userData?.plan && userData.plan !== 'free' && (
+                <div className="text-right">
+                  <p className="text-xs text-white/50">Din plan</p>
+                  <p className="text-sm font-medium text-white capitalize">{userData.plan}</p>
+                </div>
+              )}
+              {userData?.plan === 'free' ? (
+                <Link
+                  href="/pricing"
+                  className="ml-4 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 transition"
+                >
+                  Uppgradera
+                </Link>
+              ) : (
+                <Link
+                  href="/pricing"
+                  className="ml-4 text-xs text-purple-400 hover:text-purple-300 transition"
+                >
+                  Byt plan
+                </Link>
+              )}
+            </div>
             <span className="text-sm text-white/60">{user.email}</span>
             <form action="/auth/signout" method="post">
               <button
@@ -77,7 +111,7 @@ export default async function DashboardPage() {
 
       <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
@@ -109,6 +143,29 @@ export default async function DashboardPage() {
                 <p className="text-sm text-white/50">Klara</p>
                 <p className="text-2xl font-semibold">{stats.completed}</p>
               </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-white/50 uppercase tracking-wider font-medium">Din plan</p>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-semibold capitalize">{userData?.plan || 'free'}</span>
+              </div>
+              {userData?.documents_limit !== undefined && userData.documents_limit !== -1 ? (
+                <p className="text-xs text-white/60 mt-2">
+                  {userData.documents_used || 0} / {userData.documents_limit} dokument
+                </p>
+              ) : (
+                <p className="text-xs text-white/60 mt-2">Obegränsade dokument</p>
+              )}
+              {userData?.plan === 'free' && (
+                <Link
+                  href="/pricing"
+                  className="mt-2 inline-block text-xs text-purple-400 hover:text-purple-300 transition font-medium"
+                >
+                  Uppgradera →
+                </Link>
+              )}
             </div>
           </div>
         </div>
