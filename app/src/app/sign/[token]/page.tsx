@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileSignature, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { FileSignature, CheckCircle, Loader2, AlertCircle, XCircle, X } from 'lucide-react'
 import { PDFViewer } from '@/components/PDFViewer'
 import { SignatureCapture } from '@/components/SignatureCapture'
 import { PDFErrorBoundary } from '@/components/ErrorBoundary'
@@ -35,12 +35,15 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [declining, setDeclining] = useState(false)
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [signer, setSigner] = useState<SignerData | null>(null)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
   const [activeField, setActiveField] = useState<{ id: string; type: 'signature' | 'initial' } | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [completed, setCompleted] = useState(false)
+  const [declined, setDeclined] = useState(false)
 
   useEffect(() => {
     const loadSigningData = async () => {
@@ -121,6 +124,31 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
     }
   }
 
+  const handleDecline = async () => {
+    setDeclining(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/sign/${token}/decline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Kunde inte avböja dokumentet')
+      }
+
+      setDeclined(true)
+      setShowDeclineConfirm(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Något gick fel')
+      setDeclining(false)
+    }
+  }
+
   const allFieldsFilled = signer?.fields.every(
     f => fieldValues[f.id] || f.type === 'text'
   )
@@ -162,6 +190,28 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
           <h1 className="text-2xl font-semibold text-white mb-2">Tack för din signatur!</h1>
           <p className="text-white/60 mb-6">
             Dokumentet har signerats. Du kommer att få en kopia via e-post.
+          </p>
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
+            <FileSignature className="h-4 w-4" />
+            {signer?.document.title}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (declined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0B]">
+        <div className="pointer-events-none fixed top-0 left-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-500/20 blur-[120px]" />
+        <div className="pointer-events-none fixed top-20 right-1/4 h-[400px] w-[400px] translate-x-1/2 rounded-full bg-blue-500/20 blur-[120px]" />
+        <div className="relative text-center max-w-md px-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 mb-6">
+            <XCircle className="h-8 w-8 text-red-400" />
+          </div>
+          <h1 className="text-2xl font-semibold text-white mb-2">Signering avböjd</h1>
+          <p className="text-white/60 mb-6">
+            Du har valt att inte signera dokumentet. Avsändaren har meddelats.
           </p>
           <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
             <FileSignature className="h-4 w-4" />
@@ -282,8 +332,68 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
                 Fyll i alla fält för att kunna signera
               </p>
             )}
+
+            {/* Decline Button */}
+            <button
+              onClick={() => setShowDeclineConfirm(true)}
+              disabled={submitting || declining}
+              className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 disabled:opacity-50 transition"
+            >
+              <XCircle className="h-4 w-4" />
+              Avböj signering
+            </button>
           </div>
         </div>
+
+        {/* Decline Confirmation Modal */}
+        {showDeclineConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0A0A0B] p-6 shadow-xl mx-4">
+              <button
+                onClick={() => setShowDeclineConfirm(false)}
+                className="absolute right-4 top-4 text-gray-400 hover:text-white transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                  <XCircle className="h-5 w-5 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Avböj signering</h3>
+              </div>
+
+              <p className="text-gray-400 mb-6">
+                Är du säker på att du vill avböja att signera detta dokument?
+                Avsändaren kommer att meddelas.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeclineConfirm(false)}
+                  disabled={declining}
+                  className="flex-1 rounded-full border border-white/10 px-4 py-2 font-medium text-white hover:bg-white/5 transition disabled:opacity-50"
+                >
+                  Avbryt
+                </button>
+                <button
+                  onClick={handleDecline}
+                  disabled={declining}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-full bg-red-500 px-4 py-2 font-medium text-white hover:bg-red-600 transition disabled:opacity-50"
+                >
+                  {declining ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Avböjer...
+                    </>
+                  ) : (
+                    'Avböj signering'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* PDF Viewer */}
         <div className="flex-1 overflow-hidden p-4">

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, FileText, Clock, CheckCircle, Mail, ExternalLink, Copy } from 'lucide-react'
+import { DeleteDocumentButton } from '@/components/DeleteDocumentButton'
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -88,13 +89,16 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
               Skapad {new Date(document.created_at).toLocaleDateString('sv-SE')}
             </p>
           </div>
-          <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${statusColors[document.status as keyof typeof statusColors]}`}>
-            {document.status === 'draft' && 'Utkast'}
-            {document.status === 'pending' && 'Väntar på signering'}
-            {document.status === 'completed' && 'Signerat'}
-            {document.status === 'expired' && 'Utgånget'}
-            {document.status === 'declined' && 'Avböjt'}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${statusColors[document.status as keyof typeof statusColors]}`}>
+              {document.status === 'draft' && 'Utkast'}
+              {document.status === 'pending' && 'Väntar på signering'}
+              {document.status === 'completed' && 'Signerat'}
+              {document.status === 'expired' && 'Utgånget'}
+              {document.status === 'declined' && 'Avböjt'}
+            </span>
+            <DeleteDocumentButton documentId={id} documentTitle={document.title} />
+          </div>
         </div>
 
         {/* Actions */}

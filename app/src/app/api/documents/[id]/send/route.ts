@@ -145,10 +145,16 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create signature fields' }, { status: 500 })
     }
 
-    // Update document status to pending
+    // Update document status to pending with 30-day expiration
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 30)
+
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ status: 'pending' })
+      .update({
+        status: 'pending',
+        expires_at: expiresAt.toISOString()
+      })
       .eq('id', id)
 
     if (updateError) {

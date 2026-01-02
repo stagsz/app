@@ -28,11 +28,12 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  // Get user's documents (placeholder - will be empty initially)
+  // Get user's documents (excluding soft-deleted)
   const { data: documents } = await supabase
     .from('documents')
     .select('*')
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(10)
 
@@ -164,12 +165,22 @@ export default async function DashboardPage() {
                         {new Date(doc.created_at).toLocaleDateString('sv-SE')}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                        <Link
-                          href={`/documents/${doc.id}`}
-                          className="text-purple-400 hover:text-purple-300 transition"
-                        >
-                          Visa
-                        </Link>
+                        <div className="flex items-center justify-end gap-3">
+                          {doc.status === 'draft' && (
+                            <Link
+                              href={`/documents/${doc.id}/edit`}
+                              className="text-pink-400 hover:text-pink-300 transition"
+                            >
+                              Redigera
+                            </Link>
+                          )}
+                          <Link
+                            href={`/documents/${doc.id}`}
+                            className="text-purple-400 hover:text-purple-300 transition"
+                          >
+                            Visa
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -5,6 +5,11 @@
 create extension if not exists "uuid-ossp";
 
 -- Users table (extends Supabase auth.users)
+-- TODO: Stripe integration not yet implemented. When implementing:
+-- 1. Create webhook endpoint for Stripe events
+-- 2. Implement checkout flow for plan upgrades
+-- 3. Handle subscription lifecycle (create, update, cancel)
+-- 4. Sync plan and limits from Stripe subscription status
 create table public.users (
   id uuid references auth.users on delete cascade primary key,
   email text not null unique,
@@ -213,5 +218,55 @@ begin
   returning documents_used into new_count;
 
   return new_count;
+end;
+$$ language plpgsql security definer;
+
+-- ============================================
+-- MIGRATIONS (run these on existing databases)
+-- ============================================
+
+-- Add soft delete column to documents
+alter table public.documents add column if not exists deleted_at timestamp with time zone;
+
+-- Add composite index for signer status lookups
+create index if not exists signers_document_status_idx on public.signers(document_id, status);
+
+-- Add index for document expiration queries
+create index if not exists documents_expires_at_idx on public.documents(expires_at) where expires_at is not null;
+
+-- Add index for soft delete queries
+create index if not exists documents_deleted_at_idx on public.documents(deleted_at) where deleted_at is null;
+
+-- Function to soft delete a document
+create or replace function public.soft_delete_document(doc_id uuid, owner_id uuid)
+returns boolean as $$
+declare
+  deleted boolean;
+begin
+  update public.documents
+  set deleted_at = timezone('utc'::text, now())
+  where id = doc_id
+    and user_id = owner_id
+    and deleted_at is null
+  returning true into deleted;
+
+  return coalesce(deleted, false);
+end;
+$$ language plpgsql security definer;
+
+-- Function to mark expired documents
+create or replace function public.mark_expired_documents()
+returns integer as $$
+declare
+  updated_count integer;
+begin
+  update public.documents
+  set status = 'expired'
+  where status = 'pending'
+    and expires_at < now()
+    and deleted_at is null
+  returning count(*) into updated_count;
+
+  return coalesce(updated_count, 0);
 end;
 $$ language plpgsql security definer;
