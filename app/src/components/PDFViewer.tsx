@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
+import type { RenderTask } from 'pdfjs-dist'
 
 // Set worker path - use local file since CDN may not have this version
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
@@ -17,6 +18,7 @@ interface PDFViewerProps {
 export function PDFViewer({ url, onPageChange, onDocumentLoad, renderOverlay }: PDFViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const renderTaskRef = useRef<RenderTask | null>(null)
   const [pdf, setPdf] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
@@ -53,6 +55,12 @@ export function PDFViewer({ url, onPageChange, onDocumentLoad, renderOverlay }: 
   const renderPage = useCallback(async () => {
     if (!pdf || !canvasRef.current) return
 
+    // Cancel any previous render task
+    if (renderTaskRef.current) {
+      renderTaskRef.current.cancel()
+      renderTaskRef.current = null
+    }
+
     try {
       const page = await pdf.getPage(currentPage)
       const canvas = canvasRef.current
@@ -64,20 +72,35 @@ export function PDFViewer({ url, onPageChange, onDocumentLoad, renderOverlay }: 
       canvas.width = viewport.width
       setPageSize({ width: viewport.width, height: viewport.height })
 
-      await page.render({
+      const renderTask = page.render({
         canvasContext: context,
-        viewport,
-        canvas
-      }).promise
+        viewport
+      })
+      renderTaskRef.current = renderTask
+
+      await renderTask.promise
+      renderTaskRef.current = null
 
       onPageChange?.(currentPage, totalPages)
-    } catch (err) {
+    } catch (err: unknown) {
+      // Ignore cancelled render errors
+      if (err && typeof err === 'object' && 'name' in err && err.name === 'RenderingCancelledException') {
+        return
+      }
       console.error('Failed to render page:', err)
     }
   }, [pdf, currentPage, scale, totalPages, onPageChange])
 
   useEffect(() => {
     renderPage()
+
+    // Cleanup: cancel render on unmount or when dependencies change
+    return () => {
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel()
+        renderTaskRef.current = null
+      }
+    }
   }, [renderPage])
 
   const goToPage = (page: number) => {
