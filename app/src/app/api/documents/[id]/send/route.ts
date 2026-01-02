@@ -133,23 +133,44 @@ export async function POST(
       )
     )
 
-    const failedEmails = emailResults.filter(r => !r.success)
+    // Track email delivery results
+    const failedEmails: string[] = []
+    const successfulEmails: string[] = []
+
+    emailResults.forEach((result, index) => {
+      const email = createdSigners[index].email
+      if (result.success) {
+        successfulEmails.push(email)
+      } else {
+        failedEmails.push(email)
+      }
+    })
+
     if (failedEmails.length > 0) {
-      console.warn('Some emails failed to send:', failedEmails)
+      console.warn('Failed to send emails to:', failedEmails)
+
+      // Log email failures to audit log
+      await supabase.from('audit_logs').insert({
+        document_id: id,
+        action: 'email_delivery_failed',
+        metadata: { failedEmails, successfulEmails }
+      })
     }
 
     // Return signing URLs so user can share them manually if email fails
     const signingUrls = createdSigners.map(s => ({
       email: s.email,
       name: s.name,
-      signingUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app-seven-smoky.vercel.app'}/sign/${s.access_token}`
+      signingUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app-seven-smoky.vercel.app'}/sign/${s.access_token}`,
+      emailSent: !failedEmails.includes(s.email)
     }))
 
     return NextResponse.json({
       success: true,
       signers: signingUrls,
+      failedEmails: failedEmails.length > 0 ? failedEmails : undefined,
       message: failedEmails.length > 0
-        ? 'Dokumentet skickades men vissa mail kunde inte levereras. Dela länkarna manuellt.'
+        ? `Dokumentet skickades men mail till ${failedEmails.join(', ')} kunde inte levereras. Dela länkarna manuellt.`
         : 'Dokumentet har skickats för signering!'
     })
   } catch (error) {

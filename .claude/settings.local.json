@@ -16,7 +16,15 @@
       "Bash(git init:*)",
       "Bash(tree:*)",
       "Bash(cat:*)",
-      "Bash(vercel inspect:*)"
+      "Bash(vercel inspect:*)",
+      "mcp__MCP_DOCKER__puppeteer_navigate",
+      "mcp__MCP_DOCKER__puppeteer_screenshot",
+      "Bash(curl:*)",
+      "Bash(printf:*)",
+      "Bash(vercel env add:*)",
+      "Bash(vercel env rm:*)",
+      "Bash(vercel:*)",
+      "mcp__MCP_DOCKER__puppeteer_evaluate"
     ]
   }
 }
