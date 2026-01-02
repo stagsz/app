@@ -74,7 +74,8 @@ export function PDFViewer({ url, onPageChange, onDocumentLoad, renderOverlay }: 
 
       const renderTask = page.render({
         canvasContext: context,
-        viewport
+        viewport,
+        canvas
       })
       renderTaskRef.current = renderTask
 
