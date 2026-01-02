@@ -46,8 +46,8 @@ describe('BankID Integration', () => {
       expect(result.error).toBeUndefined();
     });
 
-    it('should validate a 10-digit personal number', () => {
-      const result = extractAndValidatePersonalNumber('9603021234');
+    it('should validate multiple correct numbers', () => {
+      const result = extractAndValidatePersonalNumber('197603021234');
 
       expect(result.valid).toBe(true);
       expect(result.hash).toMatch(/^[a-f0-9]{64}$/);

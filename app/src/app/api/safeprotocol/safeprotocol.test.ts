@@ -141,8 +141,8 @@ describe('POST /api/safeprotocol/verify-identity/collect', () => {
       const expectedSignerUpdate = {
         identity_verified: true,
         verified_identity: 'Test User',
-        personal_number_hash: expect.any(String),
-        verification_timestamp: expect.any(String),
+        personal_number_hash: 'a'.repeat(64), // SHA-256 hash (64 hex chars)
+        verification_timestamp: new Date().toISOString(),
         verification_method: 'bankid_challenge',
       };
 
@@ -288,7 +288,7 @@ describe('GET /api/safeprotocol/consent/templates', () => {
 
     const expectedResponse = {
       consentType: 'eidas_advanced_signature',
-      text: expect.any(String),
+      text: 'Du är på väg att skapa en juridiskt bindande elektronisk signatur enligt eIDAS-förordningen.',
     };
 
     expect(expectedResponse.consentType).toBe('eidas_advanced_signature');

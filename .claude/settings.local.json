@@ -25,7 +25,11 @@
       "Bash(vercel env rm:*)",
       "Bash(vercel:*)",
       "mcp__MCP_DOCKER__puppeteer_evaluate",
-      "Bash(ls -la \"D:\\\\SimpleSign - kopia\\\\app\\\\supabase\"\" 2>/dev/null || echo \"Directory not found \")"
+      "Bash(ls -la \"D:\\\\SimpleSign - kopia\\\\app\\\\supabase\"\" 2>/dev/null || echo \"Directory not found \")",
+      "Bash(cd /d/SimpleSign - kopia)",
+      "Bash(cd:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:coverage:*)"
     ]
   },
   "enabledPlugins": {
