@@ -40,14 +40,18 @@ export async function POST(request: NextRequest) {
     // If user doesn't exist in users table, create them
     if (userError || !userData) {
       console.log('User not found in users table, creating...')
-      await supabase.from('users').insert({
+      const { error: insertError } = await supabase.from('users').insert({
         id: user.id,
         email: user.email,
         name: user.user_metadata?.name || user.email?.split('@')[0],
-        plan: isAdmin ? 'admin' : 'free',
+        plan: isAdmin ? 'business' : 'free',  // 'admin' not in schema, use 'business'
         documents_limit: isAdmin ? 9999 : 3,
         documents_used: 0
-      }).select().single()
+      })
+      if (insertError) {
+        console.error('Failed to create user:', insertError)
+        // Continue anyway - user might already exist from trigger
+      }
     } else if (!isAdmin && userData.documents_used >= userData.documents_limit) {
       return NextResponse.json({
         error: 'Dokumentgräns nådd. Uppgradera din plan.'

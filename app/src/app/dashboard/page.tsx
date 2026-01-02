@@ -28,19 +28,25 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  // Get user's documents (excluding soft-deleted)
-  const { data: documents } = await supabase
+  // Get user's documents
+  const { data: documents, error: docsError } = await supabase
     .from('documents')
     .select('*')
     .eq('user_id', user.id)
-    .is('deleted_at', null)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(20)
+
+  if (docsError) {
+    console.error('Failed to fetch documents:', docsError)
+  }
+
+  // Filter out soft-deleted documents (if column exists)
+  const activeDocuments = documents?.filter(d => !d.deleted_at) ?? []
 
   const stats = {
-    total: documents?.length ?? 0,
-    pending: documents?.filter(d => d.status === 'pending').length ?? 0,
-    completed: documents?.filter(d => d.status === 'completed').length ?? 0,
+    total: activeDocuments.length,
+    pending: activeDocuments.filter(d => d.status === 'pending').length,
+    completed: activeDocuments.filter(d => d.status === 'completed').length,
   }
 
   return (
@@ -120,7 +126,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          {documents && documents.length > 0 ? (
+          {activeDocuments.length > 0 ? (
             <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
               <table className="min-w-full divide-y divide-white/10">
                 <thead>
@@ -140,7 +146,7 @@ export default async function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {documents.map((doc) => (
+                  {activeDocuments.map((doc) => (
                     <tr key={doc.id} className="transition hover:bg-white/5">
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center gap-3">
