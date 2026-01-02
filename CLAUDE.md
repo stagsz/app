@@ -72,9 +72,36 @@ Required in `.env.local`:
 - `RESEND_API_KEY`
 - `NEXT_PUBLIC_APP_URL`
 
+## SafeProtocol: eIDAS-Compliant e-Signatures
+
+SafeProtocol is a legally binding e-signature system with:
+- **BankID Identity Verification**: Swedish electronic ID verification
+- **Consent Tracking**: eIDAS and GDPR compliance recording
+- **Audit Trail**: 7-year compliance logging
+- **Future Phases**: Cryptographic signing, TSA timestamping, blockchain recording
+
+**Key Files**:
+- `SAFEPROTOCOL.md` - Complete SafeProtocol documentation
+- `lib/bankid.ts` - BankID API integration
+- `lib/safeprotocol.ts` - SafeProtocol high-level API
+- `components/BankIDVerification.tsx` - Identity verification modal
+- `components/ConsentModal.tsx` - Consent recording modal
+- `api/safeprotocol/` - SafeProtocol API endpoints
+- `supabase/safeprotocol_migration.sql` - Database schema
+
+**Implementation Status**: Phase 1 Complete
+- ✅ BankID integration
+- ✅ Identity verification flow
+- ✅ Consent tracking
+- ✅ Compliance audit logging
+- ⏳ Phase 2-4: Cryptographic signing, timestamping, blockchain (planned)
+
 ## Key Patterns
 
 - All UI text is in Swedish
 - Server Components by default, Client Components for interactivity
 - Zod for API input validation
 - PDF files stored in Supabase Storage
+- SafeProtocol required for legally compliant e-signatures
+- BankID for Swedish identity verification
+- RLS (Row Level Security) on all SafeProtocol tables

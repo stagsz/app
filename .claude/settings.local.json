@@ -24,7 +24,11 @@
       "Bash(vercel env add:*)",
       "Bash(vercel env rm:*)",
       "Bash(vercel:*)",
-      "mcp__MCP_DOCKER__puppeteer_evaluate"
+      "mcp__MCP_DOCKER__puppeteer_evaluate",
+      "Bash(ls -la \"D:\\\\SimpleSign - kopia\\\\app\\\\supabase\"\" 2>/dev/null || echo \"Directory not found \")"
     ]
+  },
+  "enabledPlugins": {
+    "blockchain-web3@claude-code-workflows": true
   }
 }

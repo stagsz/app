@@ -24,7 +24,8 @@ export async function GET(
         name,
         email,
         status,
-        document_id
+        document_id,
+        identity_verified
       `)
       .eq('access_token', token)
       .single()
@@ -109,6 +110,7 @@ export async function GET(
       name: signer.name,
       email: signer.email,
       status: signer.status,
+      identity_verified: signer.identity_verified || false,
       document: {
         id: document.id,
         title: document.title,

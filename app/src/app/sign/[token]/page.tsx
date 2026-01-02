@@ -6,12 +6,15 @@ import { FileSignature, CheckCircle, Loader2, AlertCircle, XCircle, X } from 'lu
 import { PDFViewer } from '@/components/PDFViewer'
 import { SignatureCapture } from '@/components/SignatureCapture'
 import { PDFErrorBoundary } from '@/components/ErrorBoundary'
+import { BankIDVerification } from '@/components/BankIDVerification'
+import { ConsentModal } from '@/components/ConsentModal'
 
 interface SignerData {
   id: string
   name: string
   email: string
   status: string
+  identity_verified: boolean
   document: {
     id: string
     title: string
@@ -45,6 +48,12 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
   const [completed, setCompleted] = useState(false)
   const [declined, setDeclined] = useState(false)
 
+  // SafeProtocol states
+  const [showBankIDVerification, setShowBankIDVerification] = useState(false)
+  const [showConsentModal, setShowConsentModal] = useState(false)
+  const [verifiedName, setVerifiedName] = useState<string>('')
+  const [consentGiven, setConsentGiven] = useState(false)
+
   useEffect(() => {
     const loadSigningData = async () => {
       try {
@@ -56,6 +65,11 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
         }
 
         setSigner(data)
+
+        // Check if identity is verified - if not, show BankID verification
+        if (!data.identity_verified) {
+          setShowBankIDVerification(true)
+        }
 
         // Pre-fill date fields with current date
         const dateValues: Record<string, string> = {}
@@ -90,6 +104,15 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
 
   const handleSubmit = async () => {
     if (!signer) return
+
+    // Check SafeProtocol requirements
+    if (!signer.identity_verified || !consentGiven) {
+      setError('Identity verification och consent krävs innan signering')
+      if (!signer.identity_verified) {
+        setShowBankIDVerification(true)
+      }
+      return
+    }
 
     // Check all required fields are filled
     const missingFields = signer.fields.filter(
@@ -147,6 +170,23 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
       setError(err instanceof Error ? err.message : 'Något gick fel')
       setDeclining(false)
     }
+  }
+
+  // SafeProtocol handlers
+  const handleBankIDVerified = (name: string) => {
+    setVerifiedName(name)
+    setShowBankIDVerification(false)
+    // Update signer to reflect verification
+    if (signer) {
+      setSigner({ ...signer, identity_verified: true })
+      // Show consent modal after verification
+      setShowConsentModal(true)
+    }
+  }
+
+  const handleConsentGiven = () => {
+    setConsentGiven(true)
+    setShowConsentModal(false)
   }
 
   const allFieldsFilled = signer?.fields.every(
@@ -452,6 +492,26 @@ export default function SigningPage({ params }: { params: Promise<{ token: strin
           )}
         </div>
       </div>
+
+      {/* SafeProtocol Modals */}
+      {showBankIDVerification && signer && (
+        <BankIDVerification
+          signerId={signer.id}
+          signerName={signer.name}
+          signerEmail={signer.email}
+          onVerified={handleBankIDVerified}
+          onCancel={() => setShowBankIDVerification(false)}
+        />
+      )}
+
+      {showConsentModal && signer && (
+        <ConsentModal
+          signerId={signer.id}
+          verifiedName={verifiedName || signer.name}
+          onConsentGiven={handleConsentGiven}
+          onCancel={() => setShowConsentModal(false)}
+        />
+      )}
 
       {/* Signature Capture Modal */}
       {activeField && (
