@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
  * Prevents spam/duplicate requests within a time window
  */
 async function checkRecentAuthAttempt(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   signerId: string,
   windowMinutes = 5
 ): Promise<{ orderRef: string } | null> {
